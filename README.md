@@ -1,3 +1,9 @@
+# pure-markov: Markov Chains in Pure Data
+
+> ...will this work?
+
+# Boilerplate README
+
 An example Pure Data external using [pd-lib-builder](https://github.com/pure-data/pd-lib-builder). You can use this project to bootstrap your own Pure Data external development.
 
 ## Usage
