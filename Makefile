@@ -1,18 +1,12 @@
-# Makefile to build class 'helloworld' for Pure Data.
-# Needs Makefile.pdlibbuilder as helper makefile for platform-dependent build
-# settings and rules.
+# Includes another Makefile: see Makefile.pdlibbuilder
 
-EXT_NAME = polybang
+NAME = polybang
 
-# library name
-lib.name = $(EXT_NAME)
+lib.name = $(NAME)
+class.sources = $(NAME).c
 
-# input source file (class name == source file basename)
-class.sources = $(EXT_NAME).c
+# Extra/help files to include
+datafiles = $(NAME)-help.pd $(NAME)-meta.pd README.md
 
-# all extra files to be included in binary distribution of the library
-datafiles = $(EXT_NAME)-help.pd $(EXT_NAME)-meta.pd README.md
-
-# include Makefile.pdlibbuilder from submodule directory 'pd-lib-builder'
 PDLIBBUILDER_DIR=pd-lib-builder/
 include $(PDLIBBUILDER_DIR)/Makefile.pdlibbuilder
