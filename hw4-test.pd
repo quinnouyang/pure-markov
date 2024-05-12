@@ -1,1 +1,14 @@
-#N canvas 92 92 450 300 12;
+#N canvas 840 0 840 1022 12;
+#X obj 315 384 bng 19 250 50 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000;
+#X obj 315 432 bng 19 250 50 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000;
+#X obj 341 433 bng 19 250 50 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000;
+#X obj 366 432 bng 19 250 50 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000;
+#X obj 396 432 bng 19 250 50 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000;
+#X floatatom 356 270 5 0 0 0 - - - 0;
+#X obj 315 408 polybang 2 3;
+#X connect 0 0 6 0;
+#X connect 5 0 6 1;
+#X connect 6 0 1 0;
+#X connect 6 1 2 0;
+#X connect 6 2 3 0;
+#X connect 6 3 4 0;
