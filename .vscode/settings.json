@@ -1,0 +1,6 @@
+{
+	"files.associations": {
+		"m_pd.h": "c",
+		"utils.h": "c"
+	}
+}
