@@ -53,6 +53,8 @@ void onset_B(t_polybang *x, t_floatarg b) { set_mods(x, x->mod_A, b); }
 void on_reset(t_polybang *x) { reset_counts(x); }
 
 void on_list(t_polybang *x, t_symbol *_, t_int argc, t_atom *argv) {
+  (void)_;
+
   if (argc == 2) {
     set_mods(x, atom_getfloat(argv), atom_getfloat(argv + 1));
     return;
