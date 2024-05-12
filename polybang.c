@@ -106,4 +106,5 @@ void polybang_setup() {
                   A_DEFFLOAT, 0);
   class_addmethod(polybang_class, (t_method)on_reset, gensym("reset"), 0);
   class_addlist(polybang_class, (t_method)on_list);
+  class_sethelpsymbol(polybang_class, gensym("polybang"));
 }
