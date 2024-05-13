@@ -1,6 +1,6 @@
 #N canvas 840 0 840 1022 12;
-#X obj 133 102 markov ./matrix.csv 3 2;
 #X obj 133 71 bng 19 250 50 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000;
 #X obj 132 44 loadbang;
+#X obj 133 102 markov /Users/quinnouyang/Desktop/College-ish/sp24/mus305/hw4/matrix.csv 3 2;
+#X connect 0 0 2 0;
 #X connect 1 0 0 0;
-#X connect 2 0 1 0;
