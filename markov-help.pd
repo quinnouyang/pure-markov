@@ -1,2 +1,5 @@
 #N canvas 63 63 450 300 12;
-#X text 146 78 comment;
+#X obj 69 31 markov;
+#X text 126 30 - Import a CSV as a Markov chain;
+#X text 70 83 To model a Markov chain of N states of order M \, input a (M ** N + 1) by (N + 1) CSV such that columns 1..(N + 1_ denote states 1..N and rows 1..(M ** N + 1) denote M-order memory ("grams") 1..(M ** N). Ensure the probabilities of each row add up to one and every possible gram exists.;
+#X text 72 191 Accepts a bang input and outputs a symbol state.;

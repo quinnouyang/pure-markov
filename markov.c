@@ -14,9 +14,11 @@ static t_class *markov_class;
 
 typedef struct _markov {
   t_object x_obj;
+  t_outlet *out_state;
   const char *csv_path;
 
-  // Probability matrix
+  int curr_gram_i;
+
   int order;
   int n_states;
   int n_grams;  // n_states ** order
@@ -103,18 +105,52 @@ int csv_to_pm(t_markov *x, const char *csv_path) {
   return 0;
 }
 
-void on_bang(t_markov *x) { print(x); }
+int transition(t_markov *x) {
+  const int curr_gram_i = x->curr_gram_i;
+
+  // Transition to next state
+  float r = (float)arc4random() / UINT32_MAX;
+  float cdf = 0;
+  int next_state_i = -1;
+  for (int i = 0; i < x->n_states; ++i) {
+    cdf += x->probabilities[curr_gram_i][i];
+    if (r <= cdf) {
+      next_state_i = i;
+      break;
+    }
+  }
+
+  // Update gram
+  char new_gram[x->order];
+  for (int i = 1; i < x->order; ++i) new_gram[i - 1] = x->grams[curr_gram_i][i];
+  new_gram[x->order - 1] = *x->states[next_state_i];
+
+  for (int i = 0; i < x->n_grams; ++i)
+    if (strcmp(x->grams[i], new_gram) == 0) {
+      x->curr_gram_i = i;
+      break;
+    }
+
+  return next_state_i;
+}
+
+void on_bang(t_markov *x) {
+  outlet_symbol(x->out_state, gensym(x->states[transition(x)]));
+}
 
 void *init(const t_symbol *t_sym, const t_floatarg t_fl1,
            const t_floatarg t_fl2) {
   t_markov *x = (t_markov *)pd_new(markov_class);
 
+  x->out_state = outlet_new(&x->x_obj, &s_symbol);
   x->csv_path = t_sym->s_name;
   x->order = t_fl1;
   x->n_states = t_fl2;
   x->n_grams = pow(x->n_states, x->order);
 
-  csv_to_pm(x, x->csv_path);
+  csv_to_pm(x, t_sym->s_name);
+
+  x->curr_gram_i = 0;
 
   return x;
 }
@@ -131,6 +167,8 @@ void destroy(t_markov *x) {
   if (x->probabilities != NULL)
     for (int i = 0; i < x->n_grams; ++i) free(x->probabilities[i]);
   free(x->probabilities);
+
+  outlet_free(x->out_state);
 
   post("Destroyed t_markov");
 }
