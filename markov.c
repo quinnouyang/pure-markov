@@ -7,6 +7,7 @@
 
 #include "m_pd.h"
 
+#define DELIMITERS ",;\n"
 #define MAX_LINE_SIZE 1024
 
 static t_class *markov_class;
@@ -27,39 +28,34 @@ typedef struct _markov {
 
 void print(t_markov *x) {
   post("[markov ]");
-  post("[markov] f_path=%s", x->f_path);
-  post("[markov] order=%d, n_elements=%d, n_states=%d", x->order, x->n_elements,
+  post("[markov ] f_path=%s", x->f_path);
+  post("[markov ] order=%d, n_elements=%d, n_states=%d", x->order, x->n_elements,
        x->n_states);
 
-  post("[markov] matrix:");
+  post("[markov ] probability matrix:");
   if (x->elements == NULL)
     post("WARNING: t_markov.elements is NULL");
   else
     for (int i = 0; i < x->n_elements; ++i)
-      if (x->elements[i] == NULL)
-        post("WARNING: t_markov.elements[%d] is NULL", i);
-      else
-        post("[markov ] element: %s", x->elements[i]);
+      post("[markov ] elements[%d]: %s", i,
+           x->elements[i] != NULL ? x->elements[i] : "NULL");
 
   if (x->states == NULL)
     post("WARNING: t_markov.states is NULL");
   else
     for (int i = 0; i < x->n_states; ++i)
-      if (x->states[i] == NULL)
-        post("WARNING: t_markov.states[%d] is NULL", i);
-      else
-        post("[markov ] state: %s", x->states[i]);
+      post("[markov ] states[%d]: %s", i,
+           x->states[i] != NULL ? x->states[i] : "NULL");
 
   if (x->probabilities == NULL)
     post("WARNING: t_markov.probabilities is NULL");
   else
     for (int i = 0; i < x->n_states; ++i)
-      if (x->probabilities[i] == NULL)
-        post("WARNING: t_markov.probabilities[%d] is NULL", i);
-      else
-        for (int j = 0; j < x->n_elements; ++j)
-          post("[markov ] probability (%s -> %s): %f", x->states[i],
-               x->elements[j], x->probabilities[i][j]);
+      for (int j = 0; j < x->n_elements; ++j)
+        if (x->states != NULL && x->elements != NULL)
+          post("[markov ] probabilities[%d][%d] (%s -> %s): %f", i, j,
+               x->states[i], x->elements[j],
+               x->probabilities[i] != NULL ? x->probabilities[i][j] : -1);
 }
 
 int csv_to_pm(t_markov *x, const char *f_path) {
@@ -72,7 +68,7 @@ int csv_to_pm(t_markov *x, const char *f_path) {
   x->elements = (char **)malloc(x->n_elements * sizeof(char *));
   x->states = (char **)malloc(x->n_states * sizeof(char *));
   x->probabilities = (float **)malloc(x->n_states * sizeof(float *));
-  for (int i = 0; i < x->n_states; i++)
+  for (int i = 0; i < x->n_states; ++i)
     x->probabilities[i] = (float *)malloc(x->n_elements * sizeof(float));
 
   if (x->elements == NULL || x->states == NULL || x->probabilities == NULL) {
@@ -84,11 +80,10 @@ int csv_to_pm(t_markov *x, const char *f_path) {
   int line_i = 0;
 
   while (fgets(line, sizeof(line), file)) {
-    char *token = strtok(line, ",;\n");
+    char *token = strtok(line, DELIMITERS);
     int col_i = 0;
 
     while (token != NULL) {
-      post("(%d, %d) %s", line_i, col_i, token);
       if (line_i == 0 && col_i > 0)  // Element
         x->elements[col_i - 1] = strdup(token);
       else {
@@ -99,7 +94,7 @@ int csv_to_pm(t_markov *x, const char *f_path) {
             x->probabilities[line_i - 1][col_i - 1] = atof(token);
       }
 
-      token = strtok(NULL, ",;\n");
+      token = strtok(NULL, DELIMITERS);
       ++col_i;
     }
 
@@ -128,15 +123,15 @@ void *init(const t_symbol *t_f_path_sym, const t_floatarg t_order,
 
 void destroy(t_markov *x) {
   if (x->elements != NULL)
-    for (int i = 0; i < x->n_elements; i++) free(x->elements[i]);
+    for (int i = 0; i < x->n_elements; ++i) free(x->elements[i]);
   free(x->elements);
 
   if (x->states != NULL)
-    for (int i = 0; i < x->n_states; i++) free(x->states[i]);
+    for (int i = 0; i < x->n_states; ++i) free(x->states[i]);
   free(x->states);
 
   if (x->probabilities != NULL)
-    for (int i = 0; i < x->n_states; i++) free(x->probabilities[i]);
+    for (int i = 0; i < x->n_states; ++i) free(x->probabilities[i]);
   free(x->probabilities);
 
   post("Destroyed t_markov");
