@@ -16,9 +16,9 @@ typedef struct _markov {
   const char *f_path;
 
   // Probability matrix
-  int state_len;
+  int order;
   int n_elements;
-  int n_states;  // n_elements ** state_len
+  int n_states;  // n_elements ** order
 
   char **elements;
   char **states;          // (index, state)
@@ -28,31 +28,38 @@ typedef struct _markov {
 void print(t_markov *x) {
   post("[markov ]");
   post("[markov] f_path=%s", x->f_path);
-  post("[markov] state_len=%d, n_elements=%d, n_states=%d", x->state_len,
-       x->n_elements, x->n_states);
+  post("[markov] order=%d, n_elements=%d, n_states=%d", x->order, x->n_elements,
+       x->n_states);
 
   post("[markov] matrix:");
   if (x->elements == NULL)
     post("WARNING: t_markov.elements is NULL");
-  else {
-    for (int i = 0; i < x->n_elements; ++i) {
+  else
+    for (int i = 0; i < x->n_elements; ++i)
       if (x->elements[i] == NULL)
         post("WARNING: t_markov.elements[%d] is NULL", i);
       else
         post("[markov ] element: %s", x->elements[i]);
-    }
-  }
 
   if (x->states == NULL)
     post("WARNING: t_markov.states is NULL");
-  else {
-    for (int i = 0; i < x->n_states; ++i) {
+  else
+    for (int i = 0; i < x->n_states; ++i)
       if (x->states[i] == NULL)
         post("WARNING: t_markov.states[%d] is NULL", i);
       else
-        post("[markov ] element: %s", x->states[i]);
-    }
-  }
+        post("[markov ] state: %s", x->states[i]);
+
+  if (x->probabilities == NULL)
+    post("WARNING: t_markov.probabilities is NULL");
+  else
+    for (int i = 0; i < x->n_states; ++i)
+      if (x->probabilities[i] == NULL)
+        post("WARNING: t_markov.probabilities[%d] is NULL", i);
+      else
+        for (int j = 0; j < x->n_elements; ++j)
+          post("[markov ] probability (%s -> %s): %f", x->states[i],
+               x->elements[j], x->probabilities[i][j]);
 }
 
 int csv_to_pm(t_markov *x, const char *f_path) {
@@ -62,46 +69,42 @@ int csv_to_pm(t_markov *x, const char *f_path) {
     return 1;
   }
 
-  // char line[MAX_LINE_SIZE];
-  // int line_i = 0;
-  (void)x;
-
   x->elements = (char **)malloc(x->n_elements * sizeof(char *));
   x->states = (char **)malloc(x->n_states * sizeof(char *));
   x->probabilities = (float **)malloc(x->n_states * sizeof(float *));
+  for (int i = 0; i < x->n_states; i++)
+    x->probabilities[i] = (float *)malloc(x->n_elements * sizeof(float));
 
-  // for (int i = 0; i < x->n_states; i++)
-  //   x->probabilities[i] = (float *)malloc(x->n_elements * sizeof(float));
+  if (x->elements == NULL || x->states == NULL || x->probabilities == NULL) {
+    post("Error allocating memory for t_markov");
+    return 1;
+  }
 
-  // while (fgets(line, sizeof(line), file)) {
-  //   char *token = strtok(line, ",");
-  //   int col_i = 0;
+  char line[MAX_LINE_SIZE];
+  int line_i = 0;
 
-  //   while (token != NULL) {
-  //     // Skip first (empty/dummy) entry in first row
-  //     if (line_i == 0 && col_i == 0) {
-  //       token = strtok(NULL, ",");
-  //       ++col_i;
-  //       continue;
-  //     }
+  while (fgets(line, sizeof(line), file)) {
+    char *token = strtok(line, ",;\n");
+    int col_i = 0;
 
-  //     if (line_i == 0)  // Elements
-  //       x->elements[col_i] = *token;
-  //     else {
-  //       if (col_i == 0)  // State
-  //         x->states[line_i] = strdup(token);
-  //       else {  // Probabilities
-  //         if (x->probabilities[line_i] != NULL)
-  //           x->probabilities[line_i][col_i] = atof(token);
-  //       }
-  //     }
+    while (token != NULL) {
+      post("(%d, %d) %s", line_i, col_i, token);
+      if (line_i == 0 && col_i > 0)  // Element
+        x->elements[col_i - 1] = strdup(token);
+      else {
+        if (col_i == 0)  // State
+          x->states[line_i - 1] = strdup(token);
+        else  // Probability
+          if (x->probabilities[line_i - 1] != NULL)
+            x->probabilities[line_i - 1][col_i - 1] = atof(token);
+      }
 
-  //     token = strtok(NULL, ",");
-  //     col_i++;
-  //   }
+      token = strtok(NULL, ",;\n");
+      ++col_i;
+    }
 
-  //   line_i++;
-  // }
+    ++line_i;
+  }
 
   fclose(file);
   return 0;
@@ -109,14 +112,14 @@ int csv_to_pm(t_markov *x, const char *f_path) {
 
 void on_bang(t_markov *x) { print(x); }
 
-void *init(const t_symbol *t_f_path_sym, const t_floatarg t_state_len,
-           const t_floatarg t_n_states) {
+void *init(const t_symbol *t_f_path_sym, const t_floatarg t_order,
+           const t_floatarg t_n_elements) {
   t_markov *x = (t_markov *)pd_new(markov_class);
 
   x->f_path = t_f_path_sym->s_name;
-  x->state_len = t_state_len;
-  x->n_states = t_n_states;
-  x->n_elements = pow(t_state_len, t_n_states);
+  x->order = t_order;
+  x->n_elements = t_n_elements;
+  x->n_states = pow(t_n_elements, t_order);
 
   csv_to_pm(x, x->f_path);
 
@@ -142,7 +145,10 @@ void destroy(t_markov *x) {
 void markov_setup() {
   markov_class = class_new(gensym("markov"), (t_newmethod)init,
                            (t_method)destroy, sizeof(t_markov), CLASS_DEFAULT,
-                           A_DEFSYMBOL, A_DEFFLOAT, A_DEFFLOAT, A_DEFFLOAT, 0);
+                           A_DEFSYMBOL,  // Absolute path
+                           A_DEFFLOAT,   // Order
+                           A_DEFFLOAT,   // Number of elements
+                           0);
 
   class_addbang(markov_class, (t_method)on_bang);
 
